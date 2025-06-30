@@ -97,15 +97,15 @@
 
       const levels = [
         { rows: 8, baseHealth: 15, healthIncrease: 3 },
-        { rows: 12, baseHealth: 30, healthIncrease: 5 },
-        { rows: 12, baseHealth: 60, healthIncrease: 10 },
-        { rows: 15, baseHealth: 100, healthIncrease: 15 },
-        { rows: 20, baseHealth: 150, healthIncrease: 25 },
-        { rows: 22, baseHealth: 200, healthIncrease: 35 },
-        { rows: 25, baseHealth: 280, healthIncrease: 45 },
-        { rows: 25, baseHealth: 380, healthIncrease: 60 },
-        { rows: 28, baseHealth: 500, healthIncrease: 80 },
-        { rows: 30, baseHealth: 700, healthIncrease: 100 },
+        { rows: 10, baseHealth: 30, healthIncrease: 5 },
+        { rows: 10, baseHealth: 60, healthIncrease: 10 },
+        { rows: 12, baseHealth: 100, healthIncrease: 15 },
+        { rows: 15, baseHealth: 150, healthIncrease: 25 },
+        { rows: 18, baseHealth: 200, healthIncrease: 35 },
+        { rows: 20, baseHealth: 280, healthIncrease: 45 },
+        { rows: 20, baseHealth: 380, healthIncrease: 60 },
+        { rows: 22, baseHealth: 500, healthIncrease: 80 },
+        { rows: 25, baseHealth: 700, healthIncrease: 100 },
       ];
 
       const powerUpPoolsByLevel = {
@@ -404,9 +404,10 @@
 
       const activeSoundCounts = {};
       const maxSounds = {
-        bounce: 8,
-        break: 6,
-        default: 4,
+        bounce: 10,
+        break: 8,
+        fire: 5,
+        default: 6,
       };
 
       function playSound(soundType, options = {}) {
@@ -417,151 +418,198 @@
         if (count >= limit) {
           return;
         }
-        activeSoundCounts[soundType] = count + 1;
+        activeSoundCounts[soundType] = (activeSoundCounts[soundType] || 0) + 1;
 
-        const oscillator = audioCtx.createOscillator();
+        const now = audioCtx.currentTime;
+        const masterGain = 0.15;
+        let duration = 0.2;
+
         const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
 
-        let duration = 0.5;
-
-        switch (soundType) {
-          case "ballDestroyed":
-            oscillator.type = "noise";
-            gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.2
-            );
-            duration = 0.2;
-            break;
-          case "bounce":
-            oscillator.type = "sine";
-            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.2
-            );
-            duration = 0.25;
-            break;
-          case "armorHit":
-            oscillator.type = "square";
-            oscillator.frequency.setValueAtTime(180, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.15
-            );
-            duration = 0.2;
-            break;
-          case "break":
-            oscillator.type = "sawtooth";
-            oscillator.frequency.setValueAtTime(
-              options.isPowerUp ? 880 : 660,
-              audioCtx.currentTime
-            );
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.15
-            );
-            duration = 0.2;
-            break;
-          case "powerup":
-            oscillator.type = "triangle";
-            oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(
-              1046,
-              audioCtx.currentTime + 0.2
-            );
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.3
-            );
-            duration = 0.35;
-            break;
-          case "launch":
-            oscillator.type = "square";
-            oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.3
-            );
-            duration = 0.3;
-            break;
-          case "gameOver":
-            oscillator.type = "sawtooth";
-            oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(
-              50,
-              audioCtx.currentTime + 1.5
-            );
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 1.5
-            );
-            duration = 1.5;
-            break;
-          case "laser":
-            oscillator.type = "sawtooth";
-            oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
-            oscillator.frequency.linearRampToValueAtTime(
-              300,
-              audioCtx.currentTime + 0.5
-            );
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.5
-            );
-            duration = 0.5;
-            break;
-          case "scatter":
-            oscillator.type = "triangle";
-            oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
-            oscillator.frequency.linearRampToValueAtTime(
-              1200,
-              audioCtx.currentTime + 0.1
-            );
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.2
-            );
-            duration = 0.2;
-            break;
-          case "fireExplosion":
-            oscillator.type = "square";
-            oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(
-              0.001,
-              audioCtx.currentTime + 0.4
-            );
-            duration = 0.4;
-            break;
-          case "levelUp":
-            [523.25, 659.25, 783.99].forEach((freq, index) => {
-              const osc = audioCtx.createOscillator();
-              const gain = audioCtx.createGain();
-              osc.connect(gain);
-              gain.connect(audioCtx.destination);
-              const startTime = audioCtx.currentTime + 0.1 * index;
-              osc.frequency.setValueAtTime(freq, startTime);
-              gain.gain.setValueAtTime(0.2, startTime);
-              gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
-              osc.start(startTime);
-              osc.stop(startTime + 0.5);
-            });
-            activeSoundCounts[soundType]--;
-            return;
-        }
-
-        oscillator.onended = () => {
+        const onEnded = () => {
           if (activeSoundCounts[soundType]) {
             activeSoundCounts[soundType]--;
           }
         };
 
-        oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + duration);
+        switch (soundType) {
+          case "ballDestroyed": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gainNode.gain.setValueAtTime(masterGain, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            duration = 0.1;
+            break;
+          }
+
+          case "bounce": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(500 + Math.random() * 100, now);
+            gainNode.gain.setValueAtTime(masterGain * 0.8, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.15);
+            duration = 0.15;
+            break;
+          }
+
+          case "armorHit": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "square";
+            osc.frequency.setValueAtTime(120, now);
+            gainNode.gain.setValueAtTime(masterGain, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            duration = 0.1;
+            break;
+          }
+
+          case "break": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "triangle";
+            const freq = options.isPowerUp ? 700 : 500;
+            osc.frequency.setValueAtTime(freq + Math.random() * 50, now);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.8, now + 0.1);
+            gainNode.gain.setValueAtTime(masterGain, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            duration = 0.1;
+            break;
+          }
+
+          case "powerup": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(523, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+            gainNode.gain.setValueAtTime(masterGain * 1.2, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.2);
+            duration = 0.2;
+            break;
+          }
+
+          case "launch": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 0.2);
+            gainNode.gain.setValueAtTime(masterGain * 1.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.2);
+            duration = 0.2;
+            break;
+          }
+
+          case "gameOver": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 1.5);
+            gainNode.gain.setValueAtTime(masterGain * 1.5, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 1.5);
+            duration = 1.5;
+            break;
+          }
+
+          case "laser": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+            gainNode.gain.setValueAtTime(masterGain * 1.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.2);
+            duration = 0.2;
+            break;
+          }
+
+          case "scatter": {
+            const osc = audioCtx.createOscillator();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.05);
+            gainNode.gain.setValueAtTime(masterGain, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gainNode);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            duration = 0.1;
+            break;
+          }
+
+          case "fireExplosion": {
+            const bufferSize = audioCtx.sampleRate * 0.2;
+            const buffer = audioCtx.createBuffer(
+              1,
+              bufferSize,
+              audioCtx.sampleRate
+            );
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+              data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+            }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const bqFilter = audioCtx.createBiquadFilter();
+            bqFilter.type = "lowpass";
+            bqFilter.frequency.setValueAtTime(1000, now);
+            bqFilter.Q.setValueAtTime(5, now);
+            noise.connect(bqFilter);
+            bqFilter.connect(gainNode);
+            gainNode.gain.setValueAtTime(masterGain * 2.0, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            noise.start(now);
+            noise.stop(now + 0.2);
+            duration = 0.2;
+            break;
+          }
+
+          case "levelUp": {
+            [523.25, 659.25, 783.99, 1046.5].forEach((freq, index) => {
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+              const startTime = now + 0.1 * index;
+              osc.type = "triangle";
+              osc.frequency.setValueAtTime(freq, startTime);
+              gain.gain.setValueAtTime(masterGain * 1.2, startTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+              osc.start(startTime);
+              osc.stop(startTime + 0.3);
+            });
+            setTimeout(onEnded, 1000);
+            return;
+          }
+
+          default:
+            setTimeout(onEnded, 10);
+            return;
+        }
+
+        setTimeout(onEnded, duration * 1000);
       }
 
       class Ball {
@@ -729,9 +777,19 @@
             this.armorLevel = 1;
           }
           this.volatilePulse = 0;
+          this.fireHitAnimation = 0;
+          this.targetY = y;
         }
 
         update(deltaTime) {
+          if (this.y < this.targetY) {
+            const moveSpeed = brickSize * 8 * (deltaTime / 1000);
+            this.y += moveSpeed;
+            if (this.y >= this.targetY) {
+              this.y = this.targetY;
+            }
+          }
+
           if (this.destructionTimer > 0) {
             this.destructionTimer -= deltaTime;
             if (this.destructionTimer <= 0) {
@@ -740,6 +798,9 @@
           }
           if (this.hitAnimation > 0) {
             this.hitAnimation -= deltaTime;
+          }
+          if (this.fireHitAnimation > 0) {
+            this.fireHitAnimation -= deltaTime;
           }
 
           if (this.types.includes("volatile")) {
@@ -796,6 +857,22 @@
           if (this.types.includes("regenerating")) color = `hsl(120, 60%, 45%)`;
           ctx.fillStyle = color;
           ctx.fillRect(this.x, this.y, this.width, this.height);
+
+          if (this.fireHitAnimation > 0) {
+            const fireAlpha = (this.fireHitAnimation / 250) * 0.7;
+            const grad = ctx.createRadialGradient(
+              this.x + this.width / 2,
+              this.y + this.height / 2,
+              0,
+              this.x + this.width / 2,
+              this.y + this.height / 2,
+              this.width
+            );
+            grad.addColorStop(0, `rgba(255, 180, 0, ${fireAlpha})`);
+            grad.addColorStop(1, `rgba(255, 80, 0, ${fireAlpha * 0.5})`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+          }
 
           if (this.types.includes("regenerating")) {
             const pulse = 0.7 + Math.sin(Date.now() / 300) * 0.3;
@@ -1216,8 +1293,11 @@
           return;
         }
 
+        screenShake.duration = 0;
+
         bricks.forEach((brick) => {
-          brick.y += brickSize;
+          brick.targetY = brick.y + brickSize;
+          brick.hitAnimation = 0;
           if (
             brick.types.includes("regenerating") &&
             brick.health < brick.initialHealth
@@ -1237,7 +1317,7 @@
 
         if (
           bricks.some(
-            (brick) => brick.y + brick.height >= launchPosition.y - 20
+            (brick) => brick.targetY + brick.height >= launchPosition.y - 20
           )
         ) {
           gameState = "gameOver";
@@ -1246,7 +1326,27 @@
         }
 
         const currentLevel = levels[level];
-        const rowsToSpawn = screenCleared ? 2 : 1;
+        let rowsToSpawn = screenCleared ? 2 : 1;
+
+        if (
+          !screenCleared &&
+          rowsGeneratedThisLevel > 2 &&
+          bricks.length > 0 &&
+          bricks.length <= BRICK_COLUMNS &&
+          currentLevel.rows - rowsGeneratedThisLevel > 2
+        ) {
+          rowsToSpawn = 2;
+          floatingTexts.push(
+            new FloatingText(
+              canvas.width / 2,
+              canvas.height * 0.3,
+              "ACELERANDO! +1 ONDA BÔNUS!",
+              "#1E90FF",
+              canvas.width / 16,
+              2000
+            )
+          );
+        }
 
         if (rowsGeneratedThisLevel < currentLevel.rows) {
           if (screenCleared) {
@@ -1305,11 +1405,9 @@
           }
         }
 
-        powerUps = [];
-        gameState = "aiming";
         updateLaunchQueue();
-        launchIndex = 0;
-        launchTimer = 0;
+        powerUps = [];
+        gameState = "bricksMoving";
       }
 
       function checkCollisions() {
@@ -1359,7 +1457,7 @@
 
               if (ball.powerUp === "fire") {
                 playSound("fireExplosion");
-                createParticles(ball.x, ball.y, 30);
+                createParticles(ball.x, ball.y, 30, "#FF4500");
                 for (let k = bricks.length - 1; k >= 0; k--) {
                   const nearBrick = bricks[k];
                   const dist = Math.hypot(
@@ -1369,6 +1467,7 @@
                   if (dist < brickSize * 1.5) {
                     comboCount++;
                     comboTimer = COMBO_TIMEOUT;
+                    nearBrick.fireHitAnimation = 250;
                     nearBrick.hit(ball.damage, "Fire");
                   }
                 }
@@ -1378,6 +1477,10 @@
 
                 const brickHealthBeforeHit = brick.health;
                 brick.hit(ball.damage, ball.powerUp || "Normal");
+
+                if (ball.powerUp === "giant") {
+                  createShockwaveEffect(ball.x, ball.y, ball.radius, "#1E90FF");
+                }
 
                 if (
                   brickHealthBeforeHit > 0 &&
@@ -1398,6 +1501,15 @@
                   fireLaser(brick.y + brick.height / 2);
                 } else if (ball.powerUp === "multiplier" && ball.canSplit) {
                   ball.canSplit = false;
+                  visualEffects.push({
+                    type: "flash",
+                    x: ball.x,
+                    y: ball.y,
+                    radius: brickSize * 0.8,
+                    duration: 250,
+                    alpha: 1,
+                    color: "#8A2BE2",
+                  });
                   const angle = Math.atan2(ball.vy, ball.vx);
                   const splitDamage = Math.ceil(ball.damage / 2);
                   ball.damage = splitDamage;
@@ -1416,7 +1528,16 @@
                 } else if (ball.powerUp === "scatter" && !ball.hasScattered) {
                   ball.hasScattered = true;
                   playSound("scatter");
-                  createParticles(ball.x, ball.y, 20);
+                  visualEffects.push({
+                    type: "flash",
+                    x: ball.x,
+                    y: ball.y,
+                    radius: brickSize,
+                    duration: 200,
+                    alpha: 1,
+                    color: "#FFFF00",
+                  });
+                  createParticles(ball.x, ball.y, 40, "#FFFF00");
                   for (let s = 0; s < 3; s++) {
                     const scatterBall = new Ball(
                       ball.x,
@@ -1441,6 +1562,19 @@
           alpha: 1,
           duration: 420,
           ...props,
+        });
+      }
+
+      function createShockwaveEffect(x, y, radius, color) {
+        visualEffects.push({
+          type: "shockwave",
+          x: x,
+          y: y,
+          radius: radius,
+          maxRadius: radius * 4,
+          duration: 300,
+          alpha: 1,
+          color: color,
         });
       }
 
@@ -1586,11 +1720,12 @@
 
           const newBrick = new Brick(
             pos.c * brickSize + 2,
-            pos.r * brickSize + 2,
+            (pos.r - 1) * brickSize + 2,
             1,
             powerUpType,
             brickTypes
           );
+          newBrick.targetY = pos.r * brickSize + 2;
           newBricks.push(newBrick);
           healthToDistribute--;
         }
@@ -1911,9 +2046,10 @@
           checkCollisions();
 
           if (
-            balls.length === 0 &&
-            powerUps.length === 0 &&
-            ballsReturned >= totalBallsLaunchedThisRound
+            (balls.length === 0 &&
+              powerUps.length === 0 &&
+              ballsReturned >= totalBallsLaunchedThisRound) ||
+            (bricks.length === 0 && powerUps.length === 0)
           ) {
             isSpeedingUp = false;
             isAiming = false;
@@ -1932,6 +2068,22 @@
               gameState = "waiting";
               setTimeout(() => nextRound(screenWasCleared), 300);
             }
+          }
+        }
+
+        if (gameState === "bricksMoving") {
+          let allBricksInPosition = true;
+          for (const brick of bricks) {
+            if (brick.y < brick.targetY) {
+              allBricksInPosition = false;
+              break;
+            }
+          }
+
+          if (allBricksInPosition) {
+            gameState = "aiming";
+            launchIndex = 0;
+            launchTimer = 0;
           }
         }
 
@@ -2315,34 +2467,62 @@
       }
 
       function drawVisualEffect(effect) {
-        const color = "#FF00FF";
         ctx.save();
         ctx.globalAlpha = Math.max(0, effect.alpha);
-        ctx.shadowColor = color;
 
-        if (effect.type === "laser_h") {
-          ctx.shadowBlur = 20;
-          ctx.fillStyle = color;
-          ctx.fillRect(0, effect.y - 3, canvas.width, 6);
-          ctx.shadowBlur = 10;
-          ctx.fillStyle = "white";
-          ctx.fillRect(0, effect.y - 1, canvas.width, 2);
-        } else if (effect.type === "laser_v") {
-          ctx.shadowBlur = 20;
-          ctx.fillStyle = color;
-          ctx.fillRect(effect.x - 3, 0, 6, canvas.height);
-          ctx.shadowBlur = 10;
-          ctx.fillStyle = "white";
-          ctx.fillRect(effect.x - 1, 0, 2, canvas.height);
-        } else if (effect.type === "laser_d") {
-          ctx.translate(effect.x, effect.y);
-          ctx.rotate(effect.isForward ? Math.PI / 4 : -Math.PI / 4);
-          ctx.shadowBlur = 20;
-          ctx.fillStyle = color;
-          ctx.fillRect(canvas.width * -1.5, -3, canvas.width * 3, 6);
-          ctx.shadowBlur = 10;
-          ctx.fillStyle = "white";
-          ctx.fillRect(canvas.width * -1.5, -1, canvas.width * 3, 2);
+        if (effect.type.startsWith("laser")) {
+          const color = "#FF00FF";
+          ctx.shadowColor = color;
+          if (effect.type === "laser_h") {
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = color;
+            ctx.fillRect(0, effect.y - 3, canvas.width, 6);
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, effect.y - 1, canvas.width, 2);
+          } else if (effect.type === "laser_v") {
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = color;
+            ctx.fillRect(effect.x - 3, 0, 6, canvas.height);
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = "white";
+            ctx.fillRect(effect.x - 1, 0, 2, canvas.height);
+          } else if (effect.type === "laser_d") {
+            ctx.translate(effect.x, effect.y);
+            ctx.rotate(effect.isForward ? Math.PI / 4 : -Math.PI / 4);
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = color;
+            ctx.fillRect(canvas.width * -1.5, -3, canvas.width * 3, 6);
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = "white";
+            ctx.fillRect(canvas.width * -1.5, -1, canvas.width * 3, 2);
+          }
+        } else if (effect.type === "shockwave") {
+          const progress = 1 - effect.alpha;
+          const currentRadius =
+            effect.radius + (effect.maxRadius - effect.radius) * progress;
+          const r = parseInt(effect.color.slice(1, 3), 16);
+          const g = parseInt(effect.color.slice(3, 5), 16);
+          const b = parseInt(effect.color.slice(5, 7), 16);
+          ctx.strokeStyle = `rgba(${r},${g},${b}, ${effect.alpha})`;
+          ctx.lineWidth = 4 * effect.alpha;
+          ctx.beginPath();
+          ctx.arc(effect.x, effect.y, currentRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (effect.type === "flash") {
+          const r = parseInt(effect.color.slice(1, 3), 16);
+          const g = parseInt(effect.color.slice(3, 5), 16);
+          const b = parseInt(effect.color.slice(5, 7), 16);
+          ctx.fillStyle = `rgba(${r},${g},${b}, ${effect.alpha * 0.7})`;
+          ctx.beginPath();
+          ctx.arc(
+            effect.x,
+            effect.y,
+            effect.radius * (1.5 - effect.alpha * 0.5),
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
         }
         ctx.restore();
       }
@@ -3167,6 +3347,7 @@
           "shooting",
           "waiting",
           "levelTransition",
+          "bricksMoving",
         ];
         if (!showInfoStates.includes(gameState)) {
           infoDiv.innerHTML = "";
@@ -3174,9 +3355,9 @@
         }
 
         const remainingBalls =
-          gameState === "aiming"
-            ? currentLaunchQueue.length
-            : totalBallsLaunchedThisRound - launchIndex;
+          gameState === "shooting"
+            ? totalBallsLaunchedThisRound - launchIndex
+            : currentLaunchQueue.length;
         const progress =
           levelTargetScore > 0 ? Math.min(score / levelTargetScore, 1) : 0;
         const progressPercent = Math.floor(progress * 100);
@@ -3222,11 +3403,12 @@
             perk: "laserChance",
             title: "Precisão Laser",
             description:
-              "Chance de disparar um laser ao atingir um bloco.",
+              "Adiciona uma bola Laser permanente e dá chance de disparar lasers ao atingir blocos.",
             icon: "laser",
             color: "#FF00FF",
             apply: () => {
               playerPerk = "laserChance";
+              permanentPowerUps.push("laser");
             },
           },
           {
@@ -3357,7 +3539,7 @@
             perk: "laserChance",
             title: "Precisão Laser",
             description:
-              "Chance de disparar um laser ao atingir um bloco.",
+              "Comece com uma bola Laser e chance de disparar lasers extras ao atingir blocos.",
             icon: "laser",
             color: "#FF00FF",
           },
@@ -3474,6 +3656,8 @@
           ) {
             if (choice.perk === "laserChance") {
               playerPerk = "laserChance";
+              permanentPowerUps.push("laser");
+              baseBallsToLaunch = 0;
             } else {
               permanentPowerUps.push(choice.perk);
               baseBallsToLaunch = 0;
