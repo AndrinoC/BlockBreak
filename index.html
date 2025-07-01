@@ -2026,6 +2026,19 @@
             }
           }
 
+          if (bricks.length === 0 && balls.length > 0) {
+            for (const ball of balls) {
+              const returnSpeed = ball.speed * 1.5;
+              const dx = launchPosition.x - ball.x;
+              const dy = canvas.height + ball.radius - ball.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist > 1) {
+                ball.vx = (dx / dist) * returnSpeed;
+                ball.vy = (dy / dist) * returnSpeed;
+              }
+            }
+          }
+
           for (let j = balls.length - 1; j >= 0; j--) {
             if (!balls[j].update(deltaFactor, deltaTime)) {
               if (!balls[j].isSplitBall) ballsReturned++;
@@ -2043,7 +2056,9 @@
             }
           });
 
-          checkCollisions();
+          if (bricks.length > 0) {
+            checkCollisions();
+          }
 
           if (
             (balls.length === 0 &&
@@ -3820,6 +3835,17 @@
             uiButtons = [];
             gameState = "levelComplete";
             playSound("levelUp");
+          }
+        }
+
+        if (event.key === "2") {
+          const activeGameStates = ["aiming", "shooting", "waiting", "bricksMoving"];
+          if (activeGameStates.includes(gameState)) {
+            bricks.forEach(brick => {
+                if (!brick.isBeingDestroyed) {
+                    brick.handleDestruction();
+                }
+            });
           }
         }
       });
